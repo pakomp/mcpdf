@@ -34,6 +34,7 @@ import com.itextpdf.text.pdf.PdfImportedPage;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.pdf.XfdfReader;
+import com.itextpdf.text.pdf.FdfReader;
 
 public class Main
 {
@@ -60,6 +61,7 @@ public class Main
         config.formInputStream = null;
         config.stampFilename = "";
         config.backgroundFilename = "";
+	config.isFdf = false;
         config.flatten = false;
         for (int i = 1; i < args.length; i++) {
             if ("stamp".equals(args[i])) {
@@ -68,8 +70,15 @@ public class Main
             } else if ("background".equals(args[i])) {
                 i++;
                 config.backgroundFilename = args[i];
+            } else if ("xfill_form".equals(args[i])) {
+                config.formInputStream = System.in;
+                i++;
+                if (!"-".equals(args[i])) {
+                    throw new RuntimeException("Missing \"-\" after xfill_form operation.");
+                }
             } else if ("fill_form".equals(args[i])) {
                 config.formInputStream = System.in;
+		config.isFdf = true;
                 i++;
                 if (!"-".equals(args[i])) {
                     throw new RuntimeException("Missing \"-\" after fill_form operation.");
@@ -100,7 +109,11 @@ public class Main
             stampBackground(reader, stamper, config.backgroundFilename, false);
         }
         if (config.formInputStream != null) {
-            stamper.getAcroFields().setFields(new XfdfReader(config.formInputStream));
+	    if(config.isFdf) {
+                stamper.getAcroFields().setFields(new FdfReader(config.formInputStream));
+	    } else {
+		stamper.getAcroFields().setFields(new XfdfReader(config.formInputStream));
+            }
         }
         stamper.setFormFlattening(config.flatten);
         stamper.close();
